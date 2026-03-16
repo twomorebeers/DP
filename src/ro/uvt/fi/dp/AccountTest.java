@@ -1,10 +1,9 @@
 package ro.uvt.fi.dp;
 
-// Plain-Java unit tests — no JUnit needed, just run with assertions enabled (-ea).
-// Each method tests one behaviour. If an assertion fails it throws AssertionError with a message.
+import java.time.LocalDate;
+
 public class AccountTest {
 
-    // --- helper: tiny assert wrapper so we get a readable failure message ---
     private static void assertTrue(String testName, boolean condition) {
         if (!condition) {
             throw new AssertionError("FAIL: " + testName);
@@ -20,8 +19,6 @@ public class AccountTest {
         System.out.println("PASS: " + testName);
     }
 
-    // Issue 2 — factory method tests
-
     static void testFactoryCreatesRonAccount() {
         Account a = Account.of("RO49AAAA0000000000001", 300, Account.TYPE.RON);
         assertTrue("factory creates RonAccount", a instanceof RonAccount);
@@ -32,10 +29,7 @@ public class AccountTest {
         assertTrue("factory creates EurAccount", a instanceof EurAccount);
     }
 
-    // Issue 7 — IBAN validation tests
-
     static void testValidIbanAccepted() {
-        // should not throw
         Account a = Account.of("RO49AAAA0000000000001", 100, Account.TYPE.RON);
         assertTrue("valid IBAN accepted", a != null);
     }
@@ -60,16 +54,12 @@ public class AccountTest {
         assertTrue("null IBAN rejected with IllegalArgumentException", threw);
     }
 
-    // Issue 3 — interest constants 
-
     static void testRonLowInterestBelowThreshold() {
-        // 300 < 500 → should use 3% rate
         Account a = Account.of("RO49AAAA0000000000002", 300, Account.TYPE.RON);
         assertEquals("RON interest below threshold is 0.03", 0.03, a.getInterest(), 0.0001);
     }
 
     static void testRonHighInterestAboveThreshold() {
-        // 600 >= 500 → should use 8% rate
         Account a = Account.of("RO49AAAA0000000000003", 600, Account.TYPE.RON);
         assertEquals("RON interest above threshold is 0.08", 0.08, a.getInterest(), 0.0001);
     }
@@ -79,15 +69,12 @@ public class AccountTest {
         assertEquals("EUR interest is always 0.01", 0.01, a.getInterest(), 0.0001);
     }
 
-    // Issue 4 — getBalance() vs getTotalAmount()
-
     static void testGetBalanceReturnsRawAmount() {
         Account a = Account.of("RO49AAAA0000000000004", 200, Account.TYPE.RON);
         assertEquals("getBalance() returns raw amount", 200.0, a.getBalance(), 0.0001);
     }
 
     static void testGetTotalAmountIncludesInterest() {
-        // 200 * (1 + 0.03) = 206
         Account a = Account.of("RO49AAAA0000000000005", 200, Account.TYPE.RON);
         assertEquals("getTotalAmount() = balance + interest projection", 206.0, a.getTotalAmount(), 0.0001);
     }
@@ -96,8 +83,6 @@ public class AccountTest {
         Account a = Account.of("RO49AAAA0000000000006", 200, Account.TYPE.RON);
         assertTrue("getBalance() and getTotalAmount() are not equal", a.getBalance() != a.getTotalAmount());
     }
-
-    // Issue 5 — transfer direction fix
 
     static void testReceiveFromDebitsSource() {
         RonAccount source = (RonAccount) Account.of("RO49AAAA0000000000007", 500, Account.TYPE.RON);
@@ -110,7 +95,6 @@ public class AccountTest {
     }
 
     static void testTransferDelegateCorrectly() {
-        // transfer() should behave identically to receiveFrom() — money goes INTO the caller
         RonAccount source = (RonAccount) Account.of("RO49AAAA0000000000009", 500, Account.TYPE.RON);
         RonAccount dest   = (RonAccount) Account.of("RO49AAAA0000000000010", 100, Account.TYPE.RON);
 
@@ -119,8 +103,6 @@ public class AccountTest {
         assertEquals("transfer() debits source correctly", 400.0, source.getBalance(), 0.0001);
         assertEquals("transfer() credits dest correctly", 200.0, dest.getBalance(), 0.0001);
     }
-
-    // Issue 6 — ISP: EUR accounts must NOT implement Transfer
 
     static void testEurAccountNotTransferable() {
         Account eur = Account.of("EU02AAAA0000000000003", 500, Account.TYPE.EUR);
@@ -131,8 +113,6 @@ public class AccountTest {
         Account ron = Account.of("RO49AAAA0000000000011", 500, Account.TYPE.RON);
         assertTrue("RonAccount implements Transfer", ron instanceof Transfer);
     }
-
-    // Issue 8 — AccountFormatter outputs the right text
 
     static void testFormatterContainsCurrencyLabel() {
         Account ron = Account.of("RO49AAAA0000000000012", 100, Account.TYPE.RON);
@@ -146,8 +126,6 @@ public class AccountTest {
         assertTrue("formatter includes the account code", formatted.contains("EU02AAAA0000000000004"));
     }
 
-    // Basic Operations: depose / retrieve
-
     static void testDepose() {
         Account a = Account.of("RO49AAAA0000000000013", 100, Account.TYPE.RON);
         a.depose(50);
@@ -160,44 +138,54 @@ public class AccountTest {
         assertEquals("retrieve decreases balance", 120.0, a.getBalance(), 0.0001);
     }
 
-    // And now we run all tests.
+    static void testClientBuilderCreatesOptionalFields() {
+        Client c = Client.builder("Popescu Ana")
+                .address("Cluj")
+                .birthDay(LocalDate.of(1998, 5, 20))
+                .premium(true)
+                .initialAccount(Account.TYPE.EUR, "EU02AAAA0000000000500", 500)
+                .build();
+
+        assertTrue("builder creates client account", c.getAccount("EU02AAAA0000000000500") != null);
+    }
+
+    static void testFactoryCreatesByType() {
+        Account eur = AccountFactory.create("EU02AAAA0000000000777", 77, Account.TYPE.EUR);
+        Account ron = AccountFactory.create("RO49AAAA0000000000777", 77, Account.TYPE.RON);
+        assertTrue("factory creates eur", eur instanceof EurAccount);
+        assertTrue("factory creates ron", ron instanceof RonAccount);
+    }
+
+    static void testSingletonReturnsSameInstance() {
+        BankRegistry r1 = BankRegistry.getInstance();
+        BankRegistry r2 = BankRegistry.getInstance();
+        assertTrue("singleton returns same instance", r1 == r2);
+    }
+
     public static void main(String[] args) {
         System.out.println("=== Running AccountTest ===\n");
-
-        // factory
         testFactoryCreatesRonAccount();
         testFactoryCreatesEurAccount();
-
-        // IBAN validation
         testValidIbanAccepted();
         testInvalidIbanRejected();
         testNullIbanRejected();
-
-        // interest constants
         testRonLowInterestBelowThreshold();
         testRonHighInterestAboveThreshold();
         testEurFlatInterest();
-
-        // balance vs total
         testGetBalanceReturnsRawAmount();
         testGetTotalAmountIncludesInterest();
         testGetBalanceAndTotalAreDifferent();
-
-        // transfer direction
         testReceiveFromDebitsSource();
         testTransferDelegateCorrectly();
-
-        // ISP
         testEurAccountNotTransferable();
         testRonAccountIsTransferable();
-
-        // formatter
         testFormatterContainsCurrencyLabel();
         testFormatterContainsAccountCode();
-
-        // basic operations
         testDepose();
         testRetrieve();
+        testClientBuilderCreatesOptionalFields();
+        testFactoryCreatesByType();
+        testSingletonReturnsSameInstance();
 
         System.out.println("\n=== All tests passed! ===");
     }
