@@ -1,10 +1,12 @@
 package ro.uvt.fi.dp;
+
 public abstract class Account implements Operations {
     public static enum TYPE {
         EUR, RON
     }
 
-    // kept this intentionally loose because some old test data has weird bank suffixes
+    // kept this intentionally loose because some old test data has weird bank
+    // suffixes
     private static final String IBAN_REGEX = "^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$";
 
     String accountCode;
@@ -14,8 +16,8 @@ public abstract class Account implements Operations {
     protected Account(String accountCode, double amount, Account.TYPE type) {
         if (accountCode == null || !accountCode.matches(IBAN_REGEX)) {
             throw new IllegalArgumentException(
-                "Invalid IBAN code: '" + accountCode + "'. Expected format: 2 letters + 2 digits + up to 30 alphanumeric chars."
-            );
+                    "Invalid IBAN code: '" + accountCode
+                            + "'. Expected format: 2 letters + 2 digits + up to 30 alphanumeric chars.");
         }
         this.accountCode = accountCode;
         this.type = type;
