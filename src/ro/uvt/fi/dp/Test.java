@@ -81,5 +81,45 @@ public class Test {
         } catch (IllegalArgumentException e) {
             System.out.println("Caught expected error: " + e.getMessage());
         }
+
+        System.out.println("\n--- Command + Chain demo ---");
+        BankOperationService operationService = new BankOperationService();
+
+        operationService.deposit(ronTarget, 50);
+        System.out.println("After command deposit(+50): " + ronTarget.getBalance());
+
+        operationService.withdraw(ronTarget, 20);
+        System.out.println("After command withdraw(-20): " + ronTarget.getBalance());
+
+        operationService.transfer(ronTarget, ronSource, 30);
+        System.out.println("After command transfer(-30/+30):");
+        System.out.println("  Ionescu RON: " + ronTarget.getBalance());
+        System.out.println("  Marinescu RON: " + ronSource.getBalance());
+
+        operationService.undoLast();
+        System.out.println("After undo transfer:");
+        System.out.println("  Ionescu RON: " + ronTarget.getBalance());
+        System.out.println("  Marinescu RON: " + ronSource.getBalance());
+
+        operationService.redoLast();
+        System.out.println("After redo transfer:");
+        System.out.println("  Ionescu RON: " + ronTarget.getBalance());
+        System.out.println("  Marinescu RON: " + ronSource.getBalance());
+
+        try {
+            operationService.transfer(ronTarget, ronSource, 8_000);
+        } catch (IllegalStateException e) {
+            System.out.println("Blocked by chain (expected): " + e.getMessage());
+        }
+
+        System.out.println("\n--- Decorator demo ---");
+        Account premiumProjection = new BonusInterestDecorator(ronTarget, 0.02);
+        System.out.println("Ionescu RON projected with bonus interest: "
+                + String.format("%.2f", premiumProjection.getTotalAmount()));
+
+        AuditAccountDecorator audited = new AuditAccountDecorator(ronSource);
+        audited.depose(10);
+        audited.retrieve(5);
+        System.out.println("Audited operations on Marinescu RON: " + audited.getAuditTrail());
     }
 }

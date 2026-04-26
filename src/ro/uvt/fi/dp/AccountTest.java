@@ -162,6 +162,92 @@ public class AccountTest {
         assertTrue("singleton returns same instance", r1 == r2);
     }
 
+    static void testCommandDepositUndoRedo() {
+        Account a = Account.of("RO49AAAA0000000000888", 100, Account.TYPE.RON);
+        BankOperationService service = new BankOperationService();
+
+        service.deposit(a, 50);
+        assertEquals("command deposit works", 150.0, a.getBalance(), 0.0001);
+
+        service.undoLast();
+        assertEquals("undo deposit works", 100.0, a.getBalance(), 0.0001);
+
+        service.redoLast();
+        assertEquals("redo deposit works", 150.0, a.getBalance(), 0.0001);
+    }
+
+    static void testCommandTransferUndo() {
+        Account source = Account.of("RO49AAAA0000000000889", 400, Account.TYPE.RON);
+        Account destination = Account.of("RO49AAAA0000000000890", 100, Account.TYPE.RON);
+        BankOperationService service = new BankOperationService();
+
+        service.transfer(source, destination, 90);
+        assertEquals("transfer debits source", 310.0, source.getBalance(), 0.0001);
+        assertEquals("transfer credits destination", 190.0, destination.getBalance(), 0.0001);
+
+        service.undoLast();
+        assertEquals("undo transfer restores source", 400.0, source.getBalance(), 0.0001);
+        assertEquals("undo transfer restores destination", 100.0, destination.getBalance(), 0.0001);
+    }
+
+    static void testChainRejectsLargeTransfer() {
+        Account source = Account.of("RO49AAAA0000000000891", 20_000, Account.TYPE.RON);
+        Account destination = Account.of("RO49AAAA0000000000892", 100, Account.TYPE.RON);
+        BankOperationService service = new BankOperationService();
+
+        boolean threw = false;
+        try {
+            service.transfer(source, destination, 8_000);
+        } catch (IllegalStateException e) {
+            threw = true;
+        }
+        assertTrue("chain blocks suspicious transfer", threw);
+    }
+
+    static void testChainRejectsInsufficientFunds() {
+        Account source = Account.of("RO49AAAA0000000000893", 50, Account.TYPE.RON);
+        BankOperationService service = new BankOperationService();
+
+        boolean threw = false;
+        try {
+            service.withdraw(source, 500);
+        } catch (IllegalStateException e) {
+            threw = true;
+        }
+        assertTrue("chain blocks insufficient funds", threw);
+    }
+
+    static void testBonusInterestDecoratorIncreasesProjectedTotal() {
+        Account base = Account.of("RO49AAAA0000000000991", 1_000, Account.TYPE.RON);
+        Account bonus = new BonusInterestDecorator(base, 0.02);
+
+        assertEquals("bonus decorator raises effective interest", 0.10, bonus.getInterest(), 0.0001);
+        assertEquals("bonus decorator changes projected total", 1_100.0, bonus.getTotalAmount(), 0.0001);
+    }
+
+    static void testAuditDecoratorCapturesOperations() {
+        Account base = Account.of("RO49AAAA0000000000992", 200, Account.TYPE.RON);
+        AuditAccountDecorator audited = new AuditAccountDecorator(base);
+
+        audited.depose(50);
+        audited.retrieve(20);
+
+        assertEquals("audited account keeps correct balance", 230.0, audited.getBalance(), 0.0001);
+        assertTrue("audit trail has 2 entries", audited.getAuditTrail().size() == 2);
+    }
+
+    static void testDecoratedAccountWorksWithCommands() {
+        Account base = Account.of("RO49AAAA0000000000993", 100, Account.TYPE.RON);
+        Account decorated = new AuditAccountDecorator(base);
+        BankOperationService service = new BankOperationService();
+
+        service.deposit(decorated, 40);
+        assertEquals("command works with decorated account", 140.0, decorated.getBalance(), 0.0001);
+
+        service.undoLast();
+        assertEquals("undo works with decorated account", 100.0, decorated.getBalance(), 0.0001);
+    }
+
     public static void main(String[] args) {
         System.out.println("=== Running AccountTest ===\n");
         testFactoryCreatesRonAccount();
@@ -186,6 +272,13 @@ public class AccountTest {
         testClientBuilderCreatesOptionalFields();
         testFactoryCreatesByType();
         testSingletonReturnsSameInstance();
+        testCommandDepositUndoRedo();
+        testCommandTransferUndo();
+        testChainRejectsLargeTransfer();
+        testChainRejectsInsufficientFunds();
+        testBonusInterestDecoratorIncreasesProjectedTotal();
+        testAuditDecoratorCapturesOperations();
+        testDecoratedAccountWorksWithCommands();
 
         System.out.println("\n=== All tests passed! ===");
     }
