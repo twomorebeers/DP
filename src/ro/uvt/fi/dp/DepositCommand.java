@@ -17,7 +17,7 @@ public class DepositCommand implements BankCommand {
     @Override
     public void undo() {
         target.retrieve(amount);
-    }
+    } // de implementat stack
 
     @Override
     public String description() {
