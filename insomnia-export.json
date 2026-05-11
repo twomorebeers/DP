@@ -1,0 +1,180 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-05-10T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_bank_api",
+      "_type": "workspace",
+      "name": "Bank API",
+      "description": "Lab 7 DB + API demo",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_bank_api",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080"
+      }
+    },
+    {
+      "_id": "fld_banks",
+      "_type": "request_group",
+      "parentId": "wrk_bank_api",
+      "name": "Banks"
+    },
+    {
+      "_id": "fld_clients",
+      "_type": "request_group",
+      "parentId": "wrk_bank_api",
+      "name": "Clients"
+    },
+    {
+      "_id": "fld_accounts",
+      "_type": "request_group",
+      "parentId": "wrk_bank_api",
+      "name": "Accounts"
+    },
+    {
+      "_id": "fld_ops",
+      "_type": "request_group",
+      "parentId": "wrk_bank_api",
+      "name": "Operations"
+    },
+    {
+      "_id": "req_create_bank",
+      "_type": "request",
+      "parentId": "fld_banks",
+      "name": "Create Bank",
+      "method": "POST",
+      "url": "{{ base_url }}/banks",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"code\": \"BCR\",\n  \"name\": \"BCR Bank\",\n  \"address\": \"Timisoara\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_get_bank",
+      "_type": "request",
+      "parentId": "fld_banks",
+      "name": "Get Bank by ID",
+      "method": "GET",
+      "url": "{{ base_url }}/banks/1"
+    },
+    {
+      "_id": "req_create_client",
+      "_type": "request",
+      "parentId": "fld_clients",
+      "name": "Create Client",
+      "method": "POST",
+      "url": "{{ base_url }}/clients/bank/1",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Ionescu Ion\",\n  \"address\": \"Timisoara\",\n  \"premium\": true\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_get_client",
+      "_type": "request",
+      "parentId": "fld_clients",
+      "name": "Get Client by ID",
+      "method": "GET",
+      "url": "{{ base_url }}/clients/1"
+    },
+    {
+      "_id": "req_create_account",
+      "_type": "request",
+      "parentId": "fld_accounts",
+      "name": "Create Account",
+      "method": "POST",
+      "url": "{{ base_url }}/accounts/client/1",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"iban\": \"RO49BCRF0000000000124\",\n  \"currency\": \"RON\",\n  \"balance\": 500\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_get_account",
+      "_type": "request",
+      "parentId": "fld_accounts",
+      "name": "Get Account by IBAN",
+      "method": "GET",
+      "url": "{{ base_url }}/accounts/RO49BCRF0000000000124"
+    },
+    {
+      "_id": "req_deposit",
+      "_type": "request",
+      "parentId": "fld_ops",
+      "name": "Deposit",
+      "method": "POST",
+      "url": "{{ base_url }}/operations/deposit",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"iban\": \"RO49BCRF0000000000124\",\n  \"amount\": 100\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_withdraw",
+      "_type": "request",
+      "parentId": "fld_ops",
+      "name": "Withdraw",
+      "method": "POST",
+      "url": "{{ base_url }}/operations/withdraw",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"iban\": \"RO49BCRF0000000000124\",\n  \"amount\": 50\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_transfer",
+      "_type": "request",
+      "parentId": "fld_ops",
+      "name": "Transfer",
+      "method": "POST",
+      "url": "{{ base_url }}/operations/transfer",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"sourceIban\": \"RO49BCRF0000000000124\",\n  \"destinationIban\": \"RO49BCRF0000000000999\",\n  \"amount\": 30\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    }
+  ]
+}

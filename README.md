@@ -1,4 +1,18 @@
-# DP - Lab 5 (Decorator, Command, Chain of Responsibility)
+# Bank Management System (Design Patterns + DB + API)
+
+## Overview
+This project implements a bank management model with:
+- Core entities: Bank, Client, Account (RON/EUR)
+- Behavior patterns: Decorator, Command, Chain of Responsibility
+- Database persistence and REST API (Lab 7 option C)
+
+## Core domain (Lab 5)
+- **Bank** manages clients.
+- **Client** owns 1–5 accounts.
+- **Account** has IBAN, balance, and currency (RON/EUR).
+- Interest rules:
+	- RON: 0.03 for balance < 500; 0.08 for balance ≥ 500
+	- EUR: 0.01 regardless of balance
 
 ## Task 1 - Decorator pattern (for `Account`)
 
@@ -70,3 +84,73 @@ Pipeline in [src/ro/uvt/fi/dp/BankOperationService.java](src/ro/uvt/fi/dp/BankOp
 ## Quick verification
 - Main demo: [src/ro/uvt/fi/dp/Test.java](src/ro/uvt/fi/dp/Test.java)
 - Automated checks: [src/ro/uvt/fi/dp/AccountTest.java](src/ro/uvt/fi/dp/AccountTest.java)
+
+## Lab 7 - Option C (Database + API)
+
+### What was added
+- Spring Boot entry point: [src/ro/uvt/fi/dp/BankApplication.java](src/ro/uvt/fi/dp/BankApplication.java)
+- JDBC repositories: [src/ro/uvt/fi/dp/db](src/ro/uvt/fi/dp/db)
+- REST controllers + DTOs: [src/ro/uvt/fi/dp/api](src/ro/uvt/fi/dp/api)
+- DB schema and config: [src/main/resources/schema.sql](src/main/resources/schema.sql), [src/main/resources/application.yml](src/main/resources/application.yml)
+- Report: [LAB7_DB_REPORT.md](LAB7_DB_REPORT.md)
+- Insomnia import: [insomnia-export.json](insomnia-export.json)
+
+### API endpoints (demo)
+- `POST /banks`
+- `GET /banks/{id}`
+- `POST /clients/bank/{bankId}`
+- `GET /clients/{id}`
+- `POST /accounts/client/{clientId}`
+- `GET /accounts/{iban}`
+- `POST /operations/deposit`
+- `POST /operations/withdraw`
+- `POST /operations/transfer`
+
+## Run the app
+Use Maven to start the Spring Boot application:
+
+	mvn spring-boot:run
+
+The app starts on http://localhost:8080.
+
+## Database behavior
+- Default DB is H2 in **file mode** (persistent): `jdbc:h2:file:./data/bankdb`
+- Tables are created from [src/main/resources/schema.sql](src/main/resources/schema.sql)
+- Data persists across restarts until the file is deleted
+
+### H2 console
+- URL: http://localhost:8080/h2
+- JDBC URL: `jdbc:h2:file:./data/bankdb`
+- User: `sa`
+- Password: *(empty)*
+
+## Testing and proofs
+
+### 1) Unit tests (logic + patterns)
+- [src/ro/uvt/fi/dp/AccountTest.java](src/ro/uvt/fi/dp/AccountTest.java)
+
+Run:
+
+	mvn -q -DskipTests=false test
+
+### 2) API demo (Insomnia)
+Import [insomnia-export.json](insomnia-export.json) into Insomnia and run:
+- Create bank → Create client → Create account → Deposit → Withdraw → Transfer → Get account
+
+### 3) DB verification (terminal)
+If the app is running, you can query H2 from the terminal using the H2 shell:
+
+	java -cp ~/.m2/repository/com/h2database/h2/2.1.214/h2-2.1.214.jar org.h2.tools.Shell \
+	  -url jdbc:h2:file:./data/bankdb -user sa
+
+Then run:
+
+	SELECT * FROM banks;
+	SELECT * FROM clients;
+	SELECT * FROM accounts;
+	SELECT * FROM operations;
+
+## Notes
+- Re-running the same demo workflow will create duplicate records unless you change IDs/IBANs.
+- Duplicate bank codes or IBANs will fail because they are unique in the DB.
+
